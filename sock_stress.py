@@ -15,17 +15,19 @@
 import argparse
 from ipaddress import IPv4Address
 import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
-from time import sleep
-from _thread import start_new_thread
 import os
 from random import randint
 import signal
 import sys
+from _thread import start_new_thread
+from time import sleep
 
 from scapy.error import Scapy_Exception
 from scapy.layers.inet import IP, TCP
 from scapy.sendrecv import send, sr1
+
+
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 
 def commandline() -> argparse.Namespace:
@@ -62,6 +64,7 @@ def sockstress(dstaddr: IPv4Address, dstport: int) -> None:
 
 ## Graceful shutdown allows IP Table Repair
 def graceful_shutdown(*_):
+    """ Remove iptables rule on exit """
     print('\nYou pressed Ctrl+C!')
     print('Fixing IP Tables')
     os.system(f'iptables -D OUTPUT -p tcp --tcp-flags RST RST -d {options.target} -j DROP')
